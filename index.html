@@ -122,11 +122,15 @@
     <script>
       let peer = null;
       let conn = null;
+      let attemptCounter = 1;
 
-      // Function to generate a random fallback Peer ID
-      function generateFallbackPeerId() {
-        return Math.floor(1000 + Math.random() * 9000).toString();
-      }
+      // Sequence of fallback peer IDs
+      const fallbackIds = [
+        'staticlevel1no2',
+        'staticlevel1no3',
+        'staticlevel1no4',
+        'staticlevel1no5'
+      ];
 
       // Initialize the Peer with a fixed ID or fallback to a new one if the ID is taken
       function initializePeer(peerId) {
@@ -145,17 +149,23 @@
         peer.on('error', (error) => {
           document.getElementById('error').textContent = `Error: ${error.message}`;
           console.error('Peer connection error:', error);
-          // If the error is "ID taken", attempt to generate a fallback peer ID
+
+          // If the error is "ID taken", attempt the next fallback ID in the sequence
           if (error.type === 'peer-unavailable' || error.message.includes('ID "staticlevel1" is taken')) {
-            console.log("Peer ID 'staticlevel1' is taken. Generating fallback ID.");
-            const fallbackId = generateFallbackPeerId();
-            console.log("New fallback peer ID: ", fallbackId);
-            initializePeer(fallbackId);  // Try initializing with the fallback ID
+            console.log(`Peer ID '${fallbackIds[attemptCounter - 1]}' is taken. Trying next...`);
+
+            if (attemptCounter < fallbackIds.length) {
+              attemptCounter++;
+              console.log(`Trying fallback ID: ${fallbackIds[attemptCounter - 1]}`);
+              initializePeer(fallbackIds[attemptCounter - 1]);
+            } else {
+              document.getElementById('error').textContent = 'All fallback IDs are taken. Please try again later.';
+            }
           }
         });
       }
 
-      // Try to connect to staticlevel1, if fails, generate a fallback ID
+      // Try to connect to staticlevel1, if fails, try fallback IDs
       function tryConnectToStaticLevel1() {
         conn = peer.connect('staticlevel1');
         conn.on('open', () => {
@@ -164,11 +174,14 @@
 
         conn.on('error', (error) => {
           console.error('Connection error:', error);
-          document.getElementById('error').textContent = 'Connection failed. Hosting instead.';
-          // Peer does not exist, try hosting with a fallback ID
-          console.log("Couldn't connect to staticlevel1, hosting...");
-          const fallbackId = generateFallbackPeerId();
-          initializePeer(fallbackId);  // Start hosting with the fallback ID
+          document.getElementById('error').textContent = 'Connection failed. Trying fallback IDs.';
+          // Peer does not exist, try connecting with the next fallback ID
+          if (attemptCounter < fallbackIds.length) {
+            console.log(`Trying to connect with ${fallbackIds[attemptCounter - 1]}...`);
+            initializePeer(fallbackIds[attemptCounter - 1]);
+          } else {
+            document.getElementById('error').textContent = 'All fallback IDs are taken. Please try again later.';
+          }
         });
       }
 
