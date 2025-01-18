@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PeerJS Connection</title>
+  <script src="https://cdn.peerjs.com/peerjs.min.js"></script>
+</head>
+<body>
+  <h1>PeerJS Connection Demo</h1>
+  <div id="status"></div>
+
+  <script>
+    // Set the peer ID
+    const peerId = 'level1';
+
+    // Initialize a new Peer object with the given ID
+    console.log(`Initializing peer with ID: ${peerId}`);
+    const peer = new Peer(peerId, {
+      host: 'peerjs.com',
+      secure: true,
+      port: 443,
+    });
+
+    // Handle events
+    peer.on('open', (id) => {
+      console.log(`Peer opened with ID: ${id}`);
+      document.getElementById('status').innerText = `Your peer ID is: ${id}`;
+      tryConnectingToPeer(peerId);
+    });
+
+    peer.on('error', (err) => {
+      console.log(`Peer error: ${err}`);
+      document.getElementById('status').innerText = `Error: ${err}`;
+    });
+
+    peer.on('connection', (conn) => {
+      // When a connection is established
+      console.log('Peer connection established!');
+      document.getElementById('status').innerText = 'Connected to peer!';
+      
+      conn.on('data', (data) => {
+        console.log('Received data:', data);
+      });
+      
+      // Send a message to the connected peer
+      console.log('Sending data to the peer...');
+      conn.send('Hello from "level1" peer!');
+    });
+
+    function tryConnectingToPeer(peerId) {
+      // Attempt to connect to the peer with the specified ID
+      console.log(`Attempting to connect to peer with ID: ${peerId}`);
+      const connection = peer.connect(peerId);
+
+      connection.on('open', () => {
+        console.log(`Successfully connected to peer: ${peerId}`);
+        document.getElementById('status').innerText = `Connected to peer: ${peerId}`;
+        // Send data to the connected peer
+        console.log('Sending data to the connected peer...');
+        connection.send('Hello from "level1" peer!');
+      });
+
+      connection.on('error', (err) => {
+        // If the connection fails (e.g., peer not found), log it
+        console.log(`Unable to connect to ${peerId}. Hosting instead.`);
+        document.getElementById('status').innerText = `Unable to connect to ${peerId}. Hosting instead.`;
+      });
+    }
+  </script>
+</body>
+</html>
