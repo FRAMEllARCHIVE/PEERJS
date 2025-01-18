@@ -91,9 +91,27 @@
         });
 
         peer.on('connection', (connection) => {
+          if (isConnected) {
+            // Reject additional connections
+            connection.close();
+            document.getElementById('error').textContent = `Rejected connection attempt from ${connection.peer}`;
+            return;
+          }
+
+          // Accept the connection
           conn = connection;
           document.getElementById('status').textContent = `Connected to ${connection.peer}`;
           isConnected = true;
+
+          // Handle incoming data (if needed)
+          conn.on('data', (data) => {
+            console.log('Received:', data);
+          });
+
+          conn.on('close', () => {
+            document.getElementById('status').textContent = `Connection with ${connection.peer} closed.`;
+            isConnected = false; // Allow new connections
+          });
         });
 
         peer.on('error', (error) => {
