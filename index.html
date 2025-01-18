@@ -22,23 +22,25 @@
       port: 443,
     });
 
-    // Handle events
+    // Handle peer open event (peer initialized and ready)
     peer.on('open', (id) => {
       console.log(`Peer opened with ID: ${id}`);
       document.getElementById('status').innerText = `Your peer ID is: ${id}`;
-      tryConnectingToPeer(peerId);
+      tryConnectingToPeer(peerId);  // Attempt to connect to "level1"
     });
 
+    // Handle error event
     peer.on('error', (err) => {
       console.log(`Peer error: ${err}`);
       document.getElementById('status').innerText = `Error: ${err}`;
     });
 
+    // Handle incoming connections
     peer.on('connection', (conn) => {
-      // When a connection is established
       console.log('Peer connection established!');
       document.getElementById('status').innerText = 'Connected to peer!';
       
+      // Listen for data from the connected peer
       conn.on('data', (data) => {
         console.log('Received data:', data);
       });
@@ -48,21 +50,23 @@
       conn.send('Hello from "level1" peer!');
     });
 
+    // Try connecting to the peer with the specified ID
     function tryConnectingToPeer(peerId) {
-      // Attempt to connect to the peer with the specified ID
       console.log(`Attempting to connect to peer with ID: ${peerId}`);
       const connection = peer.connect(peerId);
 
+      // On successful connection
       connection.on('open', () => {
         console.log(`Successfully connected to peer: ${peerId}`);
         document.getElementById('status').innerText = `Connected to peer: ${peerId}`;
+        
         // Send data to the connected peer
         console.log('Sending data to the connected peer...');
         connection.send('Hello from "level1" peer!');
       });
 
+      // On connection error (could not connect to peer)
       connection.on('error', (err) => {
-        // If the connection fails (e.g., peer not found), log it
         console.log(`Unable to connect to ${peerId}. Hosting instead.`);
         document.getElementById('status').innerText = `Unable to connect to ${peerId}. Hosting instead.`;
       });
