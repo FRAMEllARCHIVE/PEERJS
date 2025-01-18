@@ -1,64 +1,177 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PeerJS Connection</title> 
-  <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
-</head>
-<body>
-  <h1>PeerJS Connection Demo</h1>
-  <div id="status"></div>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-  <script>
-    const peerId = 'level1';
+    <title>PEERJS TEST</title>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+      :root {
+        --bg-primary: #1a1a1a;
+        --text-primary: #ffffff;
+        --accent: #4CAF50;
+        --error: #ff4444;
+        --card-bg: #2d2d2d;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      }
+      body {
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+      }
+      .container {
+        max-width: 800px;
+        width: 100%;
+        background-color: var(--card-bg);
+        padding: 2rem;
+        border-radius: 22px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+      h1 {
+        margin-bottom: 2rem;
+        color: var(--accent);
+        font-size: 3.3rem;
+      }
+      .status {
+        margin-bottom: 2rem;
+      }
+      .peer-id {
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 1rem 0;
+        margin-bottom: 1rem;
+        color: var(--accent);
+      }
+      .connect-form {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-bottom: 2rem;
+      }
+      input, button {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 16px;
+        font-size: 1rem;
+      }
+      input {
+        background-color: #333;
+        color: var(--text-primary);
+      }
+      button {
+        background-color: var(--accent);
+        color: white;
+        cursor: pointer;
+        transition: opacity 0.2s;
+      }
+      button:hover {
+        opacity: 0.9;
+      }
+      .error {
+        color: var(--error);
+        margin: 1rem 0;
+      }
+      #refresh-btn {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+        background-color: transparent;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 2.2rem;
+        transition: transform 1.1s ease, opacity 0.2s;
+      }
+      #refresh-btn:hover {
+        opacity: 0.9;
+        transform: rotate(360deg);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>POSTBOX</h1>
+      <div id="host-section">
+        <div class="status"></div>
+        <div class="peer-id" id="peer-id">Connecting...</div>
+      </div>
+      <div id="connect-section">
+        <div class="connect-form">
+          <input type="text" id="connect-id" placeholder="Connect to ID no." maxlength="4" pattern="\d{4}">
+          <button id="connect-btn">Join</button>
+        </div>
+      </div>
+      <div id="error" class="error"></div>
+      <button id="refresh-btn" aria-label="Refresh">
+        <i class="fa fa-refresh" style="color: var(--accent);"></i>
+      </button>
+    </div>
+    <script>
+      let peer = null;
+      let conn = null;
 
-    console.log(`Initializing peer with ID: ${peerId}`);
-    const peer = new Peer(peerId, {
-      host: 'peerjs.com',
-      secure: true,
-      port: 443,
-    });
+      function generatePeerId() {
+        return Math.floor(1000 + Math.random() * 9000).toString();
+      }
 
-    peer.on('open', (id) => {
-      console.log(`Peer opened with ID: ${id}`);
-      document.getElementById('status').innerText = `Your peer ID is: ${id}`;
-      tryConnectingToPeer(peerId);
-    });
+      function initializePeer() {
+        const peerId = generatePeerId();
+        peer = new Peer(peerId);
 
-    peer.on('error', (err) => {
-      console.log(`Peer error: ${err}`);
-      document.getElementById('status').innerText = `Error: ${err}`;
-    });
+        peer.on('open', (id) => {
+          document.getElementById('peer-id').textContent = id;
+          console.log('My peer ID is: ', id);
+        });
 
-    peer.on('connection', (conn) => {
-      console.log('Peer connection established!');
-      document.getElementById('status').innerText = 'Connected to peer!';
-      
-      conn.on('data', (data) => {
-        console.log('Received data:', data);
+        peer.on('connection', (connection) => {
+          conn = connection;
+          console.log('Connected to peer:', connection.peer);
+        });
+
+        peer.on('error', (error) => {
+          document.getElementById('error').textContent = `Error: ${error.message}`;
+          console.error('Peer connection error:', error);
+        });
+      }
+
+      function connectToPeer() {
+        const connectId = document.getElementById('connect-id').value;
+        if (connectId.length !== 4) {
+          document.getElementById('error').textContent = 'Please enter a valid 4-digit Peer ID';
+          return;
+        }
+
+        conn = peer.connect(connectId);
+        conn.on('open', () => {
+          console.log('Connected to peer with ID: ', connectId);
+        });
+        
+        conn.on('error', (error) => {
+          console.error('Connection error:', error);
+          document.getElementById('error').textContent = 'Connection failed. Please try again.';
+        });
+      }
+
+      document.getElementById('connect-btn').addEventListener('click', connectToPeer);
+      document.getElementById('refresh-btn').addEventListener('click', () => {
+        location.reload();
       });
-      
-      console.log('Sending data to the peer...');
-      conn.send('Hello from "level1" peer!');
-    });
 
-    function tryConnectingToPeer(peerId) {
-      console.log(`Attempting to connect to peer with ID: ${peerId}`);
-      const connection = peer.connect(peerId);
-
-      connection.on('open', () => {
-        console.log(`Successfully connected to peer: ${peerId}`);
-        document.getElementById('status').innerText = `Connected to peer: ${peerId}`;
-        console.log('Sending data to the connected peer...');
-        connection.send('Hello from "level1" peer!');
-      });
-
-      connection.on('error', (err) => {
-        console.log(`Unable to connect to ${peerId}. Hosting instead.`);
-        document.getElementById('status').innerText = `Unable to connect to ${peerId}. Hosting instead.`;
-      });
-    }
-  </script>
-</body>
+      initializePeer();
+    </script>
+  </body>
 </html>
