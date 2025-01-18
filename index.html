@@ -62,83 +62,81 @@
   </head>
   <body>
     <div class="container">
-      <h1>POSTBOX</h1>
+      <h1>PEERJS TEST</h1>
       <div id="host-section">
         <div class="status"></div>
         <div class="peer-id" id="peer-id">Connecting...</div>
       </div>
-      </div>
+      <div id="status" class="status"></div>
       <div id="error" class="error"></div>
     </div>
     <script>
       let peer = null;
       let conn = null;
-      let attemptCounter = 1;
+      let isConnected = false;
+      let currentStaticHostIndex = 0;
+      const staticHosts = ["statichost1", "statichost2", "statichost3", "statichost4"];
 
-      const fallbackIds = [
-        'staticlevel1no2',
-        'staticlevel1no3',
-        'staticlevel1no4',
-        'staticlevel1no5',
-        'staticlevel1no6',
-        'staticlevel1no7',
-        'staticlevel1no8',
-        'staticlevel1no9'
-      ];
+      function generateRandomPeerId() {
+        return 'peer-' + Math.floor(10000000000 + Math.random() * 90000000000);
+      }
 
       function initializePeer(peerId) {
+        if (peer) peer.destroy();
         peer = new Peer(peerId);
 
         peer.on('open', (id) => {
           document.getElementById('peer-id').textContent = id;
-          console.log('My peer ID is: ', id);
+          if (!isConnected && peerId.startsWith('peer-')) tryConnectToStaticHost();
         });
 
         peer.on('connection', (connection) => {
           conn = connection;
-          console.log('Connected to peer:', connection.peer);
+          document.getElementById('status').textContent = `Connected to ${connection.peer}`;
+          isConnected = true;
         });
 
         peer.on('error', (error) => {
           document.getElementById('error').textContent = `Error: ${error.message}`;
-          console.error('Peer connection error:', error);
-
-          if (error.type === 'peer-unavailable' || error.message.includes('ID "staticlevel1" is taken')) {
-            console.log(`Peer ID '${fallbackIds[attemptCounter - 1]}' is taken. Trying next...`);
-
-            if (attemptCounter < fallbackIds.length) {
-              attemptCounter++;
-              console.log(`Trying fallback ID: ${fallbackIds[attemptCounter - 1]}`);
-              initializePeer(fallbackIds[attemptCounter - 1]);
-            } else {
-              document.getElementById('error').textContent = 'All fallback IDs are taken. Please try again later.';
-            }
-          }
+          if (error.type === 'unavailable-id') initializePeer(generateRandomPeerId());
         });
       }
 
-      function tryConnectToStaticLevel1() {
-        conn = peer.connect('staticlevel1');
+      function tryConnectToStaticHost() {
+        if (currentStaticHostIndex >= staticHosts.length) {
+          document.getElementById('status').textContent = 'All static hosts failed.';
+          return;
+        }
+
+        const targetHost = staticHosts[currentStaticHostIndex];
+        document.getElementById('status').textContent = `Connecting to ${targetHost}...`;
+        conn = peer.connect(targetHost);
+
         conn.on('open', () => {
-          console.log('Connected to staticlevel1');
+          document.getElementById('status').textContent = `Connected to ${targetHost}`;
+          isConnected = true;
         });
 
-        conn.on('error', (error) => {
-          console.error('Connection error:', error);
-          document.getElementById('error').textContent = 'Connection failed. Trying fallback IDs.';
-
-          if (attemptCounter < fallbackIds.length) {
-            console.log(`Trying to connect with ${fallbackIds[attemptCounter - 1]}...`);
-            initializePeer(fallbackIds[attemptCounter - 1]);
-          } else {
-            document.getElementById('error').textContent = 'All fallback IDs are taken. Please try again later.';
+        conn.on('error', () => {
+          if (targetHost === staticHosts[currentStaticHostIndex]) {
+            rehostAsStaticHost(targetHost);
           }
         });
+
+        setTimeout(() => {
+          if (!isConnected && targetHost === staticHosts[currentStaticHostIndex]) {
+            rehostAsStaticHost(targetHost);
+          }
+        }, 5000);
       }
 
+      function rehostAsStaticHost(targetHost) {
+        document.getElementById('status').textContent = `Rehosting as ${targetHost}...`;
+        currentStaticHostIndex++;
+        initializePeer(targetHost);
+      }
 
-      initializePeer('staticlevel1');
-      tryConnectToStaticLevel1();
+      initializePeer(generateRandomPeerId());
     </script>
   </body>
 </html>
