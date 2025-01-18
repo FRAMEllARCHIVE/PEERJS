@@ -3,7 +3,6 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
     <title>PEERJS TEST</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -124,12 +123,10 @@
       let peer = null;
       let conn = null;
 
-      function generatePeerId() {
-        return Math.floor(1000 + Math.random() * 9000).toString();
-      }
-
+      // Create and initialize Peer with a fixed ID (staticlevel1)
       function initializePeer() {
-        const peerId = generatePeerId();
+        const peerId = 'staticlevel1'; // Fixed peer ID
+
         peer = new Peer(peerId);
 
         peer.on('open', (id) => {
@@ -145,33 +142,53 @@
         peer.on('error', (error) => {
           document.getElementById('error').textContent = `Error: ${error.message}`;
           console.error('Peer connection error:', error);
+          // If error occurs, assume peer doesn't exist and try hosting
+          if (error.type === 'peer-unavailable') {
+            console.log("Peer not found, hosting with 'staticlevel1'.");
+          }
         });
       }
 
-      function connectToPeer() {
+      // Function to attempt connection to the peer "staticlevel1"
+      function tryConnectToStaticLevel1() {
+        conn = peer.connect('staticlevel1');
+        conn.on('open', () => {
+          console.log('Connected to staticlevel1');
+        });
+
+        conn.on('error', (error) => {
+          console.error('Connection error:', error);
+          document.getElementById('error').textContent = 'Connection failed. Hosting instead.';
+          // Peer does not exist, try hosting with staticlevel1
+          console.log("Couldn't connect to staticlevel1, hosting...");
+          initializePeer();
+        });
+      }
+
+      document.getElementById('connect-btn').addEventListener('click', () => {
         const connectId = document.getElementById('connect-id').value;
         if (connectId.length !== 4) {
           document.getElementById('error').textContent = 'Please enter a valid 4-digit Peer ID';
           return;
         }
-
         conn = peer.connect(connectId);
         conn.on('open', () => {
           console.log('Connected to peer with ID: ', connectId);
         });
-        
+
         conn.on('error', (error) => {
           console.error('Connection error:', error);
           document.getElementById('error').textContent = 'Connection failed. Please try again.';
         });
-      }
+      });
 
-      document.getElementById('connect-btn').addEventListener('click', connectToPeer);
       document.getElementById('refresh-btn').addEventListener('click', () => {
         location.reload();
       });
 
+      // Try to connect to staticlevel1, if fails, host it
       initializePeer();
+      tryConnectToStaticLevel1();
     </script>
   </body>
 </html>
