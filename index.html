@@ -123,10 +123,13 @@
       let peer = null;
       let conn = null;
 
-      // Create and initialize Peer with a fixed ID (staticlevel1)
-      function initializePeer() {
-        const peerId = 'staticlevel1'; // Fixed peer ID
+      // Function to generate a random fallback Peer ID
+      function generateFallbackPeerId() {
+        return Math.floor(1000 + Math.random() * 9000).toString();
+      }
 
+      // Initialize the Peer with a fixed ID or fallback to a new one if the ID is taken
+      function initializePeer(peerId) {
         peer = new Peer(peerId);
 
         peer.on('open', (id) => {
@@ -142,14 +145,17 @@
         peer.on('error', (error) => {
           document.getElementById('error').textContent = `Error: ${error.message}`;
           console.error('Peer connection error:', error);
-          // If error occurs, assume peer doesn't exist and try hosting
-          if (error.type === 'peer-unavailable') {
-            console.log("Peer not found, hosting with 'staticlevel1'.");
+          // If the error is "ID taken", attempt to generate a fallback peer ID
+          if (error.type === 'peer-unavailable' || error.message.includes('ID "staticlevel1" is taken')) {
+            console.log("Peer ID 'staticlevel1' is taken. Generating fallback ID.");
+            const fallbackId = generateFallbackPeerId();
+            console.log("New fallback peer ID: ", fallbackId);
+            initializePeer(fallbackId);  // Try initializing with the fallback ID
           }
         });
       }
 
-      // Function to attempt connection to the peer "staticlevel1"
+      // Try to connect to staticlevel1, if fails, generate a fallback ID
       function tryConnectToStaticLevel1() {
         conn = peer.connect('staticlevel1');
         conn.on('open', () => {
@@ -159,9 +165,10 @@
         conn.on('error', (error) => {
           console.error('Connection error:', error);
           document.getElementById('error').textContent = 'Connection failed. Hosting instead.';
-          // Peer does not exist, try hosting with staticlevel1
+          // Peer does not exist, try hosting with a fallback ID
           console.log("Couldn't connect to staticlevel1, hosting...");
-          initializePeer();
+          const fallbackId = generateFallbackPeerId();
+          initializePeer(fallbackId);  // Start hosting with the fallback ID
         });
       }
 
@@ -186,8 +193,8 @@
         location.reload();
       });
 
-      // Try to connect to staticlevel1, if fails, host it
-      initializePeer();
+      // Initialize the Peer with 'staticlevel1' and handle fallback if ID is taken
+      initializePeer('staticlevel1');
       tryConnectToStaticLevel1();
     </script>
   </body>
