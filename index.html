@@ -58,6 +58,16 @@
         color: var(--error);
         margin: 1rem 0;
       }
+      .messages {
+        background-color: #333;
+        color: #fff;
+        padding: 1rem;
+        margin-top: 1rem;
+        border-radius: 10px;
+        max-height: 300px;
+        overflow-y: auto;
+        font-size: 1rem;
+      }
     </style>
   </head>
 
@@ -71,6 +81,11 @@
       </div>
       <div id="status" class="status"></div>
       <div id="error" class="error"></div>
+
+      <!-- Section to display received messages -->
+      <div class="messages" id="received-messages">
+        <p>No messages received yet.</p>
+      </div>
 </div>
 
 <script>
@@ -110,7 +125,7 @@
 
       conn.on('data', (data) => {
         console.log('Received Timestamp:', data);
-
+        displayReceivedMessage(data);  // Display received message
         sendTimestamp();
       });
 
@@ -171,6 +186,16 @@
     setInterval(() => {
       sendTimestamp();
     }, 10000);
+  }
+
+  function displayReceivedMessage(message) {
+    const messagesDiv = document.getElementById('received-messages');
+    const newMessage = document.createElement('p');
+    newMessage.textContent = `Received: ${message}`;
+    messagesDiv.appendChild(newMessage);
+    
+    // Scroll to the bottom of the messages container
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
   }
 
   initializePeer(generateRandomPeerId());
