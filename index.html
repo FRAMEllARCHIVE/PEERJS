@@ -85,7 +85,6 @@
   }
 
   function generateStaticHost(index) {
-
     return `statichost${index}`;
   }
 
@@ -100,7 +99,6 @@
 
     peer.on('connection', (connection) => {
       if (isConnected) {
-
         connection.close();
         document.getElementById('error').textContent = `Rejected connection attempt from ${connection.peer}`;
         return;
@@ -111,7 +109,9 @@
       isConnected = true;
 
       conn.on('data', (data) => {
-        console.log('Received:', data);
+        console.log('Received Timestamp:', data);
+
+        sendTimestamp();
       });
 
       conn.on('close', () => {
@@ -134,6 +134,10 @@
     conn.on('open', () => {
       document.getElementById('status').textContent = `Connected to ${targetHost}`;
       isConnected = true;
+
+      sendTimestamp();
+      
+      startTimestampInterval();
     });
 
     conn.on('error', () => {
@@ -153,6 +157,21 @@
     document.getElementById('status').textContent = `Rehosting as ${targetHost}...`;
     currentStaticHostIndex++;
     initializePeer(targetHost);
+  }
+
+  // Function to send the timestamp
+  function sendTimestamp() {
+    const timestamp = new Date().toISOString();
+    console.log('Sent Timestamp:', timestamp);
+    if (conn && isConnected) {
+      conn.send(timestamp);
+    }
+  }
+
+  function startTimestampInterval() {
+    setInterval(() => {
+      sendTimestamp();
+    }, 10000);
   }
 
   initializePeer(generateRandomPeerId());
