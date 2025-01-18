@@ -60,8 +60,10 @@
       }
     </style>
   </head>
+
   <body>
-    <div class="container">
+
+<div class="container">
       <h1>PEERJS TEST</h1>
       <div id="host-section">
         <div class="status"></div>
@@ -69,8 +71,10 @@
       </div>
       <div id="status" class="status"></div>
       <div id="error" class="error"></div>
-    </div>
+</div>
+
 <script>
+
   let peer = null;
   let conn = null;
   let isConnected = false;
@@ -81,7 +85,7 @@
   }
 
   function generateStaticHost(index) {
-    // Replace this logic with how you'd like to generate or fetch static host names dynamically
+
     return `statichost${index}`;
   }
 
@@ -96,25 +100,23 @@
 
     peer.on('connection', (connection) => {
       if (isConnected) {
-        // Reject additional connections
+
         connection.close();
         document.getElementById('error').textContent = `Rejected connection attempt from ${connection.peer}`;
         return;
       }
 
-      // Accept the connection
       conn = connection;
       document.getElementById('status').textContent = `Connected to ${connection.peer}`;
       isConnected = true;
 
-      // Handle incoming data (if needed)
       conn.on('data', (data) => {
         console.log('Received:', data);
       });
 
       conn.on('close', () => {
         document.getElementById('status').textContent = `Connection with ${connection.peer} closed.`;
-        isConnected = false; // Allow new connections
+        isConnected = false;
       });
     });
 
@@ -144,7 +146,7 @@
       if (!isConnected && targetHost === generateStaticHost(currentStaticHostIndex)) {
         rehostAsStaticHost(targetHost);
       }
-    }, 5000);
+    }, 888);
   }
 
   function rehostAsStaticHost(targetHost) {
